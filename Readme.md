@@ -3,6 +3,10 @@ The module is aimed for the publishing external ip address to kafka.
 
 Use case like track change of external ip address and enabling the auto updating ACL list inside other programs or external services.
 
+# Build
+````shell
+go build -ldflags "-X github.com/xh-dev-go/ip-publisher/info.BuildTime=$(date +"%Y.%m.%d.%H%M%S") -X github.com/xh-dev-go/ip-publisher/info.CommitHash=$(git log --pretty=format:'%h' -n 1)"
+````
 # Install Service
 ```powershell
 Set-Variable -Name "serviceName" -Value "ip-publisher-service"

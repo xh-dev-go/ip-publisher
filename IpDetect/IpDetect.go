@@ -6,6 +6,8 @@ import (
 	"errors"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl/scram"
+	"github.com/xh-dev-go/ip-publisher/IpDetect/cache"
+	"github.com/xh-dev-go/xhUtils/flagUtils/flagInt"
 	"github.com/xh-dev-go/xhUtils/flagUtils/flagString"
 	"github.com/xh-dev-go/xhUtils/xhKafka/KHeader"
 	"io"
@@ -17,6 +19,9 @@ import (
 var Logging func(msg string)
 var KeyLog func(msg string)
 var LogError func(err error)
+
+var CMD_DetectionPeriod *flagInt.IntParam
+var CMD_DetectionCacheCount *flagInt.IntParam
 
 var CMD_TopicFlag *flagString.StringParam
 var CMD_DeviceFlag *flagString.StringParam
@@ -126,33 +131,57 @@ func (ipDetect *IpDetect) Start() {
 
 	chanOfGetIp := make(chan GetIpResponse)
 	doneSendMessage := make(chan bool)
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(time.Duration(CMD_DetectionPeriod.Value()) * time.Minute)
 
 	go GetIp(chanOfGetIp)
 
 	var quiting = false
 	go func() {
 		defer w.Close()
+
+		//var cachedFor = 0
+		//var lastRecord = ""
+		//var detectionCacheCount = CMD_DetectionCacheCount.Value()
+
 		for {
 			select {
 			case resp := <-chanOfGetIp:
-				Logging("get ip")
+				KeyLog("start getting ip")
+
 				if resp.HasError() {
 					println(resp.Err)
 				} else {
-					println(resp.Value)
-					go SendToKafka(CMD_TopicFlag.Value(), CMD_DeviceFlag.Value(), resp.Value, doneSendMessage)
+					ipDetect.cacheEngine.CacheInternal(resp.Value, func(msg string) {
+						go SendToKafka(CMD_TopicFlag.Value(), CMD_DeviceFlag.Value(), msg, doneSendMessage)
+					})
+
+					//val := fmt.Sprint("%n\n", md5.Sum([]byte(resp.Value)))
+					//Logging(fmt.Sprintf("Cached for %d", cachedFor))
+					//if lastRecord == "" {
+					//	lastRecord = val
+					//	cachedFor += 1
+					//	go SendToKafka(CMD_TopicFlag.Value(), CMD_DeviceFlag.Value(), val, doneSendMessage)
+					//} else if lastRecord == val {
+					//	if cachedFor < detectionCacheCount {
+					//		cachedFor += 1
+					//		Logging("ip address cached")
+					//	} else {
+					//		go SendToKafka(CMD_TopicFlag.Value(), CMD_DeviceFlag.Value(), val, doneSendMessage)
+					//		cachedFor = 0
+					//	}
+					//} else {
+					//	cachedFor = 1
+					//	go SendToKafka(CMD_TopicFlag.Value(), CMD_DeviceFlag.Value(), val, doneSendMessage)
+					//}
 				}
 				Logging("[done] get ip")
 			case <-doneSendMessage:
-				Logging("[done] received complete send message")
-			//done <- true
+				KeyLog("[done] received complete send message")
 			case <-ticker.C:
-				Logging("received ticket")
 				go GetIp(chanOfGetIp)
 				Logging("[done] received ticket")
 			case <-ipDetect.Stopping:
-				Logging("Received message of quiting")
+				KeyLog("Received message of quiting")
 				quiting = true
 			}
 			if quiting {
@@ -177,9 +206,11 @@ func (ipDetect *IpDetect) Init() {
 	if LogError == nil {
 		panic(errors.New("LogError function not init"))
 	}
+	ipDetect.cacheEngine = cache.NewDefault(CMD_DetectionCacheCount.Value(), Logging)
 }
 
 type IpDetect struct {
-	Stopping chan struct{}
-	Stopped  chan struct{}
+	Stopping    chan struct{}
+	Stopped     chan struct{}
+	cacheEngine cache.CacheEngine
 }
