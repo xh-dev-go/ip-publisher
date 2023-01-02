@@ -13,4 +13,4 @@ sc.exe create $serviceName `
 	displayname=$serviceDisplayName `
 	binpath="$pwd\ip-publisher.exe --topic $topic --device $device --username $un --password $password --servers $hosts --detection-period 1 --detection-cache-count 10"
 
-sc.exe failure $serviceName reset= 0 actions= restart/0/restart/0/restart/0
+sc.exe failure $serviceName reset= 0 actions= restart/5000/restart/5000/restart/5000
