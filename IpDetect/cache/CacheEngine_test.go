@@ -18,10 +18,6 @@ func TestNormal(t *testing.T) {
 
 	var lines = strings.Split("[Handle] ==> init engine\n[Match] ==> abc\n[Handle] ==> cached for 1", "\n")
 
-	//for i := 0; i < len(msgToTest); i++ {
-	//	println(msgToTest[i])
-	//}
-
 	loopTest(msgToTest, lines, t)
 }
 
@@ -45,10 +41,6 @@ func TestCacheCase1(t *testing.T) {
 
 	var lines = strings.Split("[Handle] ==> init engine\n[Match] ==> abc\n[Handle] ==> cached for 1\n[Handle] ==> ip address cached\n[Handle] ==> cached for 2\n[Handle] ==> ip address cached\n[Handle] ==> cached for 3\n[Handle] ==> ip address send\n[Match] ==> abc\n[Handle] ==> cached for 0\n[Handle] ==> ip address cached\n[Handle] ==> cached for 1", "\n")
 
-	//for i := 0; i < len(msgToTest); i++ {
-	//	println(msgToTest[i])
-	//}
-
 	loopTest(msgToTest, lines, t)
 }
 
@@ -70,13 +62,9 @@ func TestCacheCase2(t *testing.T) {
 	engine.CacheInternal("abc", logFunc)
 	engine.CacheInternal("abc", logFunc)
 
-	var lines = strings.Split("[Handle] ==> init engine\n[Match] ==> abc\n[Handle] ==> cached for 1\n[Handle] ==> ip address cached\n[Handle] ==> cached for 2\n[Handle] ==> ip address changed\n[Match] ==> xxxx\n[Handle] ==> cached for 1\n[Handle] ==> ip address cached\n[Handle] ==> cached for 2\n[Handle] ==> ip address cached\n[Handle] ==> cached for 3", "\n")
+	var lines = strings.Split("[Handle] ==> init engine\n[Match] ==> abc\n[Handle] ==> cached for 1\n[Handle] ==> ip address cached\n[Handle] ==> cached for 2\n[Handle] ==> ip address changed\n[Match] ==> xxxx\n[Handle] ==> cached for 1\n[Handle] ==> ip address changed\n[Match] ==> abc\n[Handle] ==> cached for 1\n[Handle] ==> ip address cached\n[Handle] ==> cached for 2", "\n")
 
-	//for i := 0; i < len(msgToTest); i++ {
-	//	println(msgToTest[i])
-	//}
-
-	loopTest(msgToTest, lines, t)
+	loopTest(lines, msgToTest, t)
 }
 
 func loopTest(expecting []string, target []string, t *testing.T) {

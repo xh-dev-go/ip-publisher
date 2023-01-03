@@ -44,7 +44,7 @@ func (cacheEngine *CacheEngine) CacheInternal(msg string, handler func(msg strin
 	} else {
 		cacheEngine.cacheFor = 1
 		cacheEngine.Logging("ip address changed")
-		//go SendToKafka(CMD_TopicFlag.Value(), CMD_DeviceFlag.Value(), val, doneSendMessage)
+		cacheEngine.hashVal = val
 		handler(msg)
 	}
 	cacheEngine.Logging(fmt.Sprintf("cached for %d", cacheEngine.cacheFor))
